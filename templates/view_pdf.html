@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>View PDF - {{ document_name }}</title>
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #111;
+      }
+      .pdf-viewer {
+        width: 100%;
+        height: 100vh;
+        border: none;
+      }
+      .toolbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.65);
+        color: #fff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 10;
+      }
+      .toolbar a {
+        color: #38bdf8;
+        text-decoration: none;
+      }
+      .viewer-wrapper {
+        padding-top: 3.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <div>Viewing: {{ document_name }}</div>
+      <div><a href="{{ url_for('index') }}">Back to app</a></div>
+    </div>
+    <div class="viewer-wrapper">
+      <iframe class="pdf-viewer" src="{{ pdf_url }}"></iframe>
+    </div>
+  </body>
+</html>

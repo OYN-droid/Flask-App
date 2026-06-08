@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+.venvsource/
+venv/
+my-flask-app/.venv/
+.env
+.DS_Store
+.vscode/
+flask_start.log
+uploads/
+db/
+audio/
+templates/index 2.html

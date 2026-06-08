@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PDF Reader &amp; Analyzer</title>
+    <style>
+      :root {
+        --bg: #f7fbff;
+        --bg-soft: #edf6ff;
+        --surface: #ffffff;
+        --surface-strong: #ffffff;
+        --text: #101114;
+        --text-muted: #5f6672;
+        --border: #d9e5f5;
+        --border-strong: #c7d8ee;
+        --flash-bg: #fff6e8;
+        --flash-border: #ffb15c;
+        --input-bg: #ffffff;
+        --knicks-blue: #006bb6;
+        --knicks-blue-dark: #004c91;
+        --knicks-orange: #f58426;
+        --knicks-orange-dark: #d96d13;
+        --shadow: rgba(0, 54, 112, 0.12);
+        --hero-grid: rgba(0, 107, 182, 0.08);
+      }
+
+      [data-theme="dark"] {
+        --bg: #050609;
+        --bg-soft: #0c1421;
+        --surface: #101622;
+        --surface-strong: #151d2b;
+        --text: #f7f9fc;
+        --text-muted: #a6b0bf;
+        --border: #24364d;
+        --border-strong: #31557e;
+        --flash-bg: #251708;
+        --flash-border: #f58426;
+        --input-bg: #0b111b;
+        --knicks-blue: #1d8ee8;
+        --knicks-blue-dark: #006bb6;
+        --knicks-orange: #ff9d3a;
+        --knicks-orange-dark: #f58426;
+        --shadow: rgba(0, 0, 0, 0.45);
+        --hero-grid: rgba(29, 142, 232, 0.12);
+      }
+
+      *, *::before, *::after { box-sizing: border-box; }
+
+      html { min-height: 100%; }
+
+      body {
+        min-height: 100%;
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          linear-gradient(135deg, rgba(0, 107, 182, 0.16), rgba(255, 255, 255, 0.78) 42%, rgba(245, 132, 38, 0.16)),
+          var(--bg);
+        transition: background 0.25s, color 0.25s;
+      }
+
+      [data-theme="dark"] body {
+        background:
+          linear-gradient(135deg, rgba(0, 107, 182, 0.28), rgba(5, 6, 9, 0.92) 46%, rgba(245, 132, 38, 0.22)),
+          var(--bg);
+      }
+
+      a { color: inherit; }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 4.4rem;
+        padding: 0 1.6rem;
+        background: rgba(255, 255, 255, 0.9);
+        border-bottom: 1px solid var(--border);
+        backdrop-filter: blur(16px);
+      }
+
+      [data-theme="dark"] .topbar {
+        background: rgba(5, 6, 9, 0.88);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 850;
+        font-size: 1.08rem;
+        white-space: nowrap;
+      }
+
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: 0.7rem;
+        color: #fff;
+        background: linear-gradient(135deg, var(--knicks-blue), var(--knicks-orange));
+        font-size: 1.15rem;
+        box-shadow: 0 8px 22px rgba(0, 107, 182, 0.25);
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: clamp(0.8rem, 2vw, 2rem);
+        color: var(--text-muted);
+        font-weight: 700;
+        font-size: 0.95rem;
+      }
+
+      .nav-links a {
+        text-decoration: none;
+      }
+
+      .nav-links a:hover {
+        color: var(--knicks-blue);
+      }
+
+      .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+      }
+
+      .theme-toggle,
+      button,
+      .button-link {
+        border: none;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 800;
+        transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+      }
+
+      .theme-toggle {
+        display: grid;
+        place-items: center;
+        width: 2.6rem;
+        height: 2.6rem;
+        padding: 0;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: var(--text);
+        background: var(--surface);
+        font-size: 1.05rem;
+      }
+
+      .theme-toggle:hover,
+      button:hover,
+      .button-link:hover {
+        transform: translateY(-1px);
+      }
+
+      .page-shell {
+        width: min(100%, 1180px);
+        margin: 0 auto;
+        padding: 4.2rem 1.4rem 4rem;
+      }
+
+      .hero {
+        position: relative;
+        text-align: center;
+        padding: 2rem 0 1.4rem;
+      }
+
+      .hero::before {
+        content: "";
+        position: absolute;
+        inset: -2rem 0 auto;
+        height: 17rem;
+        background-image:
+          linear-gradient(var(--hero-grid) 1px, transparent 1px),
+          linear-gradient(90deg, var(--hero-grid) 1px, transparent 1px);
+        background-size: 2.1rem 2.1rem;
+        mask-image: linear-gradient(to bottom, #000, transparent);
+        pointer-events: none;
+      }
+
+      .hero-content {
+        position: relative;
+        z-index: 1;
+      }
+
+      h1 {
+        margin: 0;
+        color: var(--text);
+        font-size: clamp(2.35rem, 5vw, 4.2rem);
+        line-height: 1.04;
+        font-weight: 900;
+      }
+
+      .powered-badge {
+        display: inline-flex;
+        align-items: center;
+        margin-left: 0.5rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 0.4rem;
+        background: var(--knicks-orange);
+        color: #fff;
+        font-size: clamp(0.78rem, 1.3vw, 0.95rem);
+        font-weight: 750;
+        vertical-align: middle;
+      }
+
+      .hero-copy {
+        max-width: 760px;
+        margin: 1.25rem auto 0;
+        color: var(--text);
+        font-size: clamp(1rem, 1.7vw, 1.18rem);
+        line-height: 1.65;
+        font-weight: 650;
+      }
+
+      .upload-panel {
+        position: relative;
+        margin-top: 2.2rem;
+        padding: clamp(2rem, 5vw, 4rem);
+        min-height: 28rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid rgba(0, 107, 182, 0.18);
+        border-radius: 1.35rem;
+        background: var(--surface);
+        box-shadow: 0 28px 70px var(--shadow);
+      }
+
+      [data-theme="dark"] .upload-panel {
+        border-color: rgba(245, 132, 38, 0.28);
+      }
+
+      .upload-panel::after {
+        content: "";
+        position: absolute;
+        inset: -3px;
+        border-radius: inherit;
+        pointer-events: none;
+        border: 3px solid rgba(245, 132, 38, 0.16);
+        clip-path: polygon(52% 0, 100% 0, 100% 100%, 52% 100%);
+      }
+
+      #upload-form {
+        width: min(100%, 720px);
+        text-align: center;
+      }
+
+      .upload-label {
+        display: block;
+        margin-bottom: 1rem;
+        color: var(--text-muted);
+        font-weight: 750;
+      }
+
+      .dropzone {
+        display: grid;
+        justify-items: center;
+        gap: 1.15rem;
+        min-height: 17rem;
+        padding: 1.5rem;
+        border: 2px dashed transparent;
+        border-radius: 1rem;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s, color 0.2s, transform 0.2s;
+      }
+
+      .dropzone.dragover {
+        border-color: var(--knicks-orange);
+        background: rgba(0, 107, 182, 0.07);
+        color: var(--text);
+        transform: scale(1.01);
+      }
+
+      .drop-illustration {
+        position: relative;
+        width: 8rem;
+        height: 7rem;
+        opacity: 0.95;
+      }
+
+      .file-sheet,
+      .file-folder {
+        position: absolute;
+        border-radius: 0.8rem;
+      }
+
+      .file-sheet {
+        left: 2.1rem;
+        top: 0;
+        width: 4.7rem;
+        height: 5.4rem;
+        background: linear-gradient(180deg, rgba(0, 107, 182, 0.18), rgba(255, 255, 255, 0.65));
+      }
+
+      .file-folder {
+        left: 0.65rem;
+        bottom: 0;
+        width: 6.9rem;
+        height: 3.9rem;
+        background: linear-gradient(135deg, rgba(0, 107, 182, 0.28), rgba(245, 132, 38, 0.26));
+        box-shadow: 0 16px 36px rgba(0, 107, 182, 0.18);
+      }
+
+      .file-folder::before {
+        content: "";
+        position: absolute;
+        left: 0.75rem;
+        top: -0.75rem;
+        width: 2.4rem;
+        height: 1.1rem;
+        border-radius: 0.55rem 0.55rem 0 0;
+        background: rgba(0, 107, 182, 0.32);
+      }
+
+      .file-plus {
+        position: absolute;
+        left: 3.5rem;
+        top: 3.55rem;
+        color: rgba(0, 107, 182, 0.42);
+        font-size: 2.6rem;
+        line-height: 1;
+        font-weight: 800;
+      }
+
+      .upload-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 3.7rem;
+        padding: 0 1.9rem;
+        border-radius: 0.55rem;
+        background: linear-gradient(135deg, var(--knicks-blue), var(--knicks-orange));
+        color: #fff;
+        box-shadow: 0 14px 28px rgba(0, 107, 182, 0.25);
+        font-size: 1.05rem;
+      }
+
+      .upload-button:hover {
+        box-shadow: 0 18px 34px rgba(245, 132, 38, 0.26);
+      }
+
+      .drop-hint {
+        margin: 0;
+        font-size: 1.02rem;
+        font-weight: 650;
+      }
+
+      .content-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1.4rem;
+        margin-top: 2rem;
+      }
+
+      .section {
+        padding: clamp(1.1rem, 3vw, 1.55rem);
+        border: 1px solid var(--border);
+        border-radius: 0.9rem;
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: 0 18px 40px var(--shadow);
+      }
+
+      [data-theme="dark"] .section {
+        background: rgba(16, 22, 34, 0.88);
+      }
+
+      .section h2 {
+        margin: 0 0 1rem;
+        color: var(--text);
+        font-size: clamp(1.15rem, 2vw, 1.45rem);
+      }
+
+      .flash {
+        margin: 0 0 1rem;
+        padding: 0.9rem 1rem;
+        border: 1px solid var(--flash-border);
+        border-radius: 0.75rem;
+        background: var(--flash-bg);
+        color: var(--text);
+        font-weight: 650;
+      }
+
+      .document-list {
+        display: grid;
+        gap: 0.85rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .document-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 1rem;
+        align-items: center;
+        padding: 1rem;
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        background: var(--surface-strong);
+      }
+
+      .document-name {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        font-weight: 850;
+      }
+
+      .document-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+      }
+
+      .button-link,
+      .delete-button,
+      .ask-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.35rem;
+        padding: 0 0.9rem;
+        border-radius: 0.5rem;
+        color: #fff;
+        text-decoration: none;
+        font-size: 0.92rem;
+      }
+
+      .button-link.primary { background: var(--knicks-blue); }
+      .button-link.secondary { background: var(--knicks-orange); }
+      .delete-button { background: #c7372f; }
+      .ask-button { background: linear-gradient(135deg, var(--knicks-blue), var(--knicks-orange)); }
+
+      .delete-form {
+        display: inline-flex;
+        margin: 0;
+      }
+
+      audio {
+        width: 13rem;
+        height: 2.2rem;
+        max-width: 100%;
+      }
+
+      input[type=file] {
+        width: 100%;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 8.5rem;
+        resize: vertical;
+        padding: 0.95rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-strong);
+        border-radius: 0.75rem;
+        background: var(--input-bg);
+        color: var(--text);
+        font: inherit;
+        line-height: 1.55;
+      }
+
+      textarea:focus {
+        outline: 3px solid rgba(0, 107, 182, 0.16);
+        border-color: var(--knicks-blue);
+      }
+
+      label {
+        display: block;
+        margin-bottom: 0.55rem;
+        color: var(--text-muted);
+        font-weight: 750;
+      }
+
+      .card {
+        padding: 1rem;
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        background: var(--surface-strong);
+      }
+
+      .card p:first-child { margin-top: 0; }
+      .card p:last-child { margin-bottom: 0; }
+
+      .small {
+        margin: 0;
+        color: var(--text-muted);
+        line-height: 1.6;
+      }
+
+      pre {
+        margin: 0;
+        max-height: 32rem;
+        overflow: auto;
+      }
+
+      @media (max-width: 920px) {
+        .nav-links { display: none; }
+        .page-shell { padding-top: 2.4rem; }
+      }
+
+      @media (max-width: 700px) {
+        .topbar {
+          padding: 0 1rem;
+        }
+
+        .brand span:last-child {
+          max-width: 11rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .page-shell {
+          padding-inline: 1rem;
+        }
+
+        .upload-panel {
+          min-height: 24rem;
+          border-width: 2px;
+        }
+
+        .document-item {
+          grid-template-columns: 1fr;
+        }
+
+        .document-actions {
+          justify-content: flex-start;
+        }
+
+        audio {
+          width: 100%;
+        }
+      }
+    </style>
+    <script>
+      (function () {
+        const saved = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', saved);
+      })();
+    </script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">PDF</span>
+        <span>PDF Reader &amp; Analyzer</span>
+      </div>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#upload">Upload PDF</a>
+        <a href="#documents">Documents</a>
+        {% if current_doc %}
+          <a href="#ask">Ask AI</a>
+        {% endif %}
+        <a href="#documents">Open PDF</a>
+      </nav>
+      <div class="top-actions">
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+          Moon
+        </button>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="hero" id="upload">
+        <div class="hero-content">
+          <h1>
+            AI PDF Reader &amp; PDF AI Analyzer
+            <span class="powered-badge">Powered by ChatGPT</span>
+          </h1>
+          <p class="hero-copy">Read PDFs with AI: summarize key points, explain concepts, generate audio, open documents inline, and ask questions with instant answers.</p>
+        </div>
+
+        <div class="upload-panel">
+          <form id="upload-form" action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+            <label class="upload-label" for="pdf_file">Choose PDF</label>
+            <div id="dropzone" class="dropzone" tabindex="0">
+              <div class="drop-illustration" aria-hidden="true">
+                <span class="file-sheet"></span>
+                <span class="file-folder"></span>
+                <span class="file-plus">+</span>
+              </div>
+              <button class="upload-button" id="upload-action-button" type="button">Upload PDF - Read with AI</button>
+              <p class="drop-hint">Or drag and drop the file here to read PDF documents online.</p>
+            </div>
+            <input type="file" id="pdf_file" name="pdf_file" accept="application/pdf" required style="display:none;" />
+          </form>
+        </div>
+      </section>
+
+      <div class="content-grid">
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <section class="section" aria-live="polite">
+              {% for message in messages %}
+                <div class="flash">{{ message }}</div>
+              {% endfor %}
+            </section>
+          {% endif %}
+        {% endwith %}
+
+        {% if not openai_key_available %}
+          <section class="section">
+            <div class="flash">
+              OpenAI API key is missing. Set <code>OPENAI_API_KEY</code> or <code>OPENAI_ADMIN_KEY</code> in your environment and restart the app to ask questions.
+            </div>
+          </section>
+        {% endif %}
+
+        <section class="section" id="documents">
+          <h2>Available Documents</h2>
+          {% if collections %}
+            <ul class="document-list">
+              {% for collection in collections %}
+                <li class="document-item">
+                  <span class="document-name">{{ collection }}</span>
+                  <div class="document-actions">
+                    <a class="button-link primary" href="{{ url_for('open_document', doc=collection) }}" target="_blank" rel="noopener">Open PDF</a>
+                    <a class="button-link secondary" href="{{ url_for('index', doc=collection) }}">Ask</a>
+                    <form class="delete-form" action="{{ url_for('delete_document') }}" method="post">
+                      <input type="hidden" name="document_name" value="{{ collection }}" />
+                      <button class="delete-button" type="submit">Delete</button>
+                    </form>
+                    <audio controls preload="none" src="{{ url_for('listen_document', document_name=collection) }}"></audio>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="small">No documents indexed yet. Upload a PDF to get started.</p>
+          {% endif %}
+        </section>
+
+        {% if current_doc %}
+          <section class="section" id="ask">
+            <h2>Ask about: {{ current_doc }}</h2>
+            <form action="{{ url_for('ask') }}" method="post">
+              <input type="hidden" name="document_name" value="{{ current_doc }}" />
+              <label for="question">Your question</label>
+              <textarea id="question" name="question" rows="4" required>{{ question or '' }}</textarea>
+              <button class="ask-button" type="submit">Ask</button>
+            </form>
+          </section>
+        {% endif %}
+
+        {% if read_text %}
+          <section class="section">
+            <h2>Read PDF Text</h2>
+            <div class="card">
+              <pre style="white-space: pre-wrap; word-break: break-word; font-family: inherit;">{{ read_text }}</pre>
+            </div>
+          </section>
+        {% endif %}
+
+        {% if answer %}
+          <section class="section">
+            <h2>Answer</h2>
+            <div class="card">
+              <p><strong>Question:</strong> {{ question }}</p>
+              <p><strong>Answer:</strong></p>
+              <p>{{ answer }}</p>
+            </div>
+          </section>
+        {% endif %}
+      </div>
+    </main>
+
+    <script>
+      (function () {
+        const theme = document.documentElement.getAttribute('data-theme');
+        document.getElementById('theme-toggle').textContent = theme === 'dark' ? 'Sun' : 'Moon';
+      })();
+
+      function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        document.getElementById('theme-toggle').textContent = next === 'dark' ? 'Sun' : 'Moon';
+      }
+
+      const dropzone = document.getElementById('dropzone');
+      const fileInput = document.getElementById('pdf_file');
+      const uploadActionButton = document.getElementById('upload-action-button');
+
+      function setDropzoneMessage(message) {
+        const hint = dropzone.querySelector('.drop-hint');
+        if (hint) {
+          hint.textContent = message;
+        }
+      }
+
+      function setUploadReady(file) {
+        if (file) {
+          uploadActionButton.type = 'submit';
+          uploadActionButton.textContent = 'Upload and Index PDF';
+        } else {
+          uploadActionButton.type = 'button';
+          uploadActionButton.textContent = 'Upload PDF - Read with AI';
+        }
+      }
+
+      uploadActionButton.addEventListener('click', () => {
+        if (uploadActionButton.type === 'button') {
+          fileInput.click();
+        }
+      });
+
+      dropzone.addEventListener('click', (event) => {
+        if (event.target.closest('button')) {
+          return;
+        }
+        fileInput.click();
+      });
+
+      dropzone.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          fileInput.click();
+        }
+      });
+
+      dropzone.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+
+      dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('dragover');
+      });
+
+      dropzone.addEventListener('drop', (event) => {
+        event.preventDefault();
+        dropzone.classList.remove('dragover');
+
+        const files = Array.from(event.dataTransfer.files || []);
+        if (files.length === 0) {
+          return;
+        }
+
+        const file = files[0];
+        if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+          setDropzoneMessage('Only PDF files are allowed. Please drop a valid PDF.');
+          return;
+        }
+
+        fileInput.files = event.dataTransfer.files;
+        setDropzoneMessage(`Ready to upload: ${file.name}`);
+        setUploadReady(file);
+      });
+
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files[0];
+        if (file) {
+          setDropzoneMessage(`Ready to upload: ${file.name}`);
+          setUploadReady(file);
+        } else {
+          setDropzoneMessage('Or drag and drop the file here to read PDF documents online.');
+          setUploadReady(null);
+        }
+      });
+    </script>
+  </body>
+</html>
