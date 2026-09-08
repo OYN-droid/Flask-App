@@ -12,9 +12,21 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import Chroma
 from langchain_community.llms import OpenAI
 from langchain_openai import OpenAIEmbeddings
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.chains import RetrievalQA
-from langchain.schema import Document
+
+try:
+    from langchain_text_splitters import CharacterTextSplitter
+except ImportError:  # LangChain < 0.3
+    from langchain.text_splitter import CharacterTextSplitter
+
+try:
+    from langchain_classic.chains import RetrievalQA
+except ImportError:  # LangChain < 1.0
+    from langchain.chains import RetrievalQA
+
+try:
+    from langchain_core.documents import Document
+except ImportError:  # LangChain < 0.3
+    from langchain.schema import Document
 
 # Updated ChromaDB import (v0.4+ API)
 import chromadb
