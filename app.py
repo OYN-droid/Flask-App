@@ -2,6 +2,7 @@ import os
 import re
 import base64
 import io
+import secrets
 from dotenv import load_dotenv
 from flask import Flask, request, render_template, redirect, url_for, flash, send_file
 from werkzeug.utils import secure_filename
@@ -50,7 +51,14 @@ def is_local_development():
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change-me")
+secret_key = os.environ.get("FLASK_SECRET_KEY")
+if not secret_key:
+    if not is_local_development():
+        raise RuntimeError(
+            "FLASK_SECRET_KEY is required. Set it to a long random value before starting the app."
+        )
+    secret_key = secrets.token_hex(32)
+app.secret_key = secret_key
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
 
 # FIX 1: Use PersistentClient instead of deprecated Client(Settings(chroma_db_impl=...))

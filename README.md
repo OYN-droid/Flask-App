@@ -18,11 +18,13 @@ A simple Flask application for uploading a PDF handbook and asking questions usi
 3. Create a `.env` file in the project root with your OpenAI key:
    ```bash
    echo "OPENAI_API_KEY=your_api_key" > .env
+   python -c "import secrets; print('FLASK_SECRET_KEY=' + secrets.token_hex(32))" >> .env
    ```
 
    Or export it in your shell:
    ```bash
    export OPENAI_API_KEY="your_api_key"
+   export FLASK_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
    ```
 
 4. Run the app:
