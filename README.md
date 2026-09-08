@@ -32,6 +32,23 @@ A simple Flask application for uploading a PDF handbook and asking questions usi
 
 5. Open your browser at `http://127.0.0.1:5000`
 
+The server binds to `127.0.0.1` with debug mode disabled by default. To enable
+debug mode explicitly for local development, run:
+
+```bash
+FLASK_DEBUG=1 python app.py
+```
+
+`FLASK_ENV=development` also enables debug mode. To listen on another interface,
+set `FLASK_RUN_HOST`; for example:
+
+```bash
+FLASK_RUN_HOST=0.0.0.0 python app.py
+```
+
+Do not enable debug mode when listening on a network-accessible interface, because
+the interactive debugger can allow arbitrary code execution.
+
 ## Usage
 
 - Upload a PDF handbook.

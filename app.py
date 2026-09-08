@@ -38,6 +38,17 @@ os.makedirs(AUDIO_FOLDER, exist_ok=True)
 # Load environment variables BEFORE checking for API key
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
+
+def is_local_development():
+    """Return whether an explicit environment setting enables local development."""
+    return os.environ.get("FLASK_DEBUG", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    } or os.environ.get("FLASK_ENV", "").strip().lower() == "development"
+
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "change-me")
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
@@ -488,4 +499,6 @@ def ask():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    debug_enabled = is_local_development()
+    host = os.environ.get("FLASK_RUN_HOST", "127.0.0.1")
+    app.run(debug=debug_enabled, host=host, port=5000)
