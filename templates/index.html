@@ -617,19 +617,19 @@
 
         <section class="section" id="documents">
           <h2>Available Documents</h2>
-          {% if collections %}
+          {% if documents %}
             <ul class="document-list">
-              {% for collection in collections %}
+              {% for document in documents %}
                 <li class="document-item">
-                  <span class="document-name">{{ collection }}</span>
+                  <span class="document-name">{{ document.original_filename }}</span>
                   <div class="document-actions">
-                    <a class="button-link primary" href="{{ url_for('open_document', doc=collection) }}" target="_blank" rel="noopener">Open PDF</a>
-                    <a class="button-link secondary" href="{{ url_for('index', doc=collection) }}">Ask</a>
+                    <a class="button-link primary" href="{{ url_for('open_document', doc=document.collection_name) }}" target="_blank" rel="noopener">Open PDF</a>
+                    <a class="button-link secondary" href="{{ url_for('index', doc=document.collection_name) }}">Ask</a>
                     <form class="delete-form" action="{{ url_for('delete_document') }}" method="post">
-                      <input type="hidden" name="document_name" value="{{ collection }}" />
+                      <input type="hidden" name="document_name" value="{{ document.collection_name }}" />
                       <button class="delete-button" type="submit">Delete</button>
                     </form>
-                    <audio controls preload="none" src="{{ url_for('listen_document', document_name=collection) }}"></audio>
+                    <audio controls preload="none" src="{{ url_for('listen_document', document_name=document.collection_name) }}"></audio>
                   </div>
                 </li>
               {% endfor %}
@@ -641,7 +641,7 @@
 
         {% if current_doc %}
           <section class="section" id="ask">
-            <h2>Ask about: {{ current_doc }}</h2>
+            <h2>Ask about: {{ current_document.original_filename }}</h2>
             <form action="{{ url_for('ask') }}" method="post">
               <input type="hidden" name="document_name" value="{{ current_doc }}" />
               <label for="question">Your question</label>
@@ -690,7 +690,6 @@
       const dropzone = document.getElementById('dropzone');
       const fileInput = document.getElementById('pdf_file');
       const uploadActionButton = document.getElementById('upload-action-button');
-
       function setDropzoneMessage(message) {
         const hint = dropzone.querySelector('.drop-hint');
         if (hint) {
