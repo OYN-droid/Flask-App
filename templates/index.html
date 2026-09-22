@@ -437,6 +437,7 @@
 
       .button-link.primary { background: var(--knicks-blue); }
       .button-link.secondary { background: var(--knicks-orange); }
+      .button-link.summarize { background: #5b4bb7; }
       .delete-button { background: #c7372f; }
       .ask-button { background: linear-gradient(135deg, var(--knicks-blue), var(--knicks-orange)); }
 
@@ -644,6 +645,7 @@
                   <div class="document-actions">
                     <a class="button-link primary" href="{{ url_for('open_document', doc=document.collection_name) }}" target="_blank" rel="noopener">Open PDF</a>
                     <a class="button-link secondary" href="{{ url_for('index', doc=document.collection_name) }}">Ask</a>
+                    <a class="button-link summarize" href="{{ url_for('summarize_document', document_name=document.collection_name) }}">Summarize</a>
                     <form class="delete-form" action="{{ url_for('delete_document') }}" method="post">
                       <input type="hidden" name="document_name" value="{{ document.collection_name }}" />
                       <button class="delete-button" type="submit">Delete</button>
@@ -675,6 +677,24 @@
             <h2>Read PDF Text</h2>
             <div class="card">
               <pre style="white-space: pre-wrap; word-break: break-word; font-family: inherit;">{{ read_text }}</pre>
+            </div>
+          </section>
+        {% endif %}
+
+        {% if document_summary %}
+          <section class="section" id="summary">
+            <h2>Summary: {{ current_document.original_filename }}</h2>
+            <div class="card">
+              <h3>Executive Summary</h3>
+              <p>{{ document_summary.executive_summary }}</p>
+              {% if document_summary.key_points %}
+                <h3>Key Points</h3>
+                <ul>
+                  {% for point in document_summary.key_points %}
+                    <li>{{ point }}</li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
             </div>
           </section>
         {% endif %}

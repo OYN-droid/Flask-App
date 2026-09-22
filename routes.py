@@ -19,11 +19,14 @@ def render_index(
     question=None,
     answer=None,
     sources=None,
+    document_summary=None,
 ):
     """Render the index page with its complete shared template context."""
     current_document = (
         vector_store.get_document_metadata(current_doc) if current_doc else None
     )
+    if current_document and document_summary is None:
+        document_summary = vector_store.get_cached_summary(current_doc)
     return render_template(
         "index.html",
         documents=vector_store.list_documents(),
@@ -33,6 +36,7 @@ def render_index(
         question=question,
         answer=answer,
         sources=sources or [],
+        document_summary=document_summary,
         openai_key_available=config.is_openai_key_available(),
     )
 
@@ -235,6 +239,32 @@ def read_document():
     return render_index(current_doc=documentation, read_text=read_text)
 
 
+def summarize_document(document_name):
+    document = vector_store.get_document_metadata(document_name)
+    if not document:
+        flash("The selected document is not available.")
+        return redirect(url_for("index"))
+
+    cached_summary = vector_store.get_cached_summary(document_name)
+    if not cached_summary and not config.is_openai_key_available():
+        flash(
+            "OpenAI API key is missing. Set OPENAI_API_KEY or OPENAI_ADMIN_KEY and restart the app."
+        )
+        return redirect(url_for("index", doc=document_name))
+
+    try:
+        document_summary = cached_summary or vector_store.summarize_document(document_name)
+    except Exception:
+        logger.exception("Failed to summarize document %s", document_name)
+        flash("Failed to summarize the document. Please try again.")
+        return redirect(url_for("index", doc=document_name))
+
+    return render_index(
+        current_doc=document_name,
+        document_summary=document_summary,
+    )
+
+
 def upload():
     if "pdf_file" not in request.files:
         flash("No file part in the request.")
@@ -363,6 +393,12 @@ def register_routes(app):
     )
     app.add_url_rule(
         "/read", endpoint="read_document", view_func=read_document, methods=["GET"]
+    )
+    app.add_url_rule(
+        "/summarize/<document_name>",
+        endpoint="summarize_document",
+        view_func=summarize_document,
+        methods=["GET"],
     )
     app.add_url_rule("/upload", endpoint="upload", view_func=upload, methods=["POST"])
     app.add_url_rule("/ask", endpoint="ask", view_func=ask, methods=["POST"])
