@@ -51,6 +51,18 @@ FLASK_RUN_HOST=0.0.0.0 python app.py
 Do not enable debug mode when listening on a network-accessible interface, because
 the interactive debugger can allow arbitrary code execution.
 
+## Running tests
+
+Install the development dependencies and run the pytest suite:
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+The tests use temporary storage and mocked OpenAI/Chroma integrations, so they do
+not require API access or modify uploaded documents.
+
 ## Usage
 
 - Upload a PDF handbook.
