@@ -1,5 +1,6 @@
 import base64
 import io
+import json
 import logging
 
 import pdfplumber
@@ -20,6 +21,37 @@ logger = logging.getLogger(__name__)
 IMAGE_DESCRIPTION_UNAVAILABLE = "[Image description unavailable]"
 
 
+def normalize_image_subtype(classification):
+    """Normalize the vision model's classification to stable metadata values."""
+    classification = str(classification or "").strip().lower()
+    if "chart" in classification or "graph" in classification:
+        return "chart"
+    if "table" in classification:
+        return "table"
+    if "diagram" in classification:
+        return "diagram"
+    if "photo" in classification or "logo" in classification:
+        return "photo"
+    return "unknown"
+
+
+def parse_vision_analysis(response_content):
+    """Parse the model's JSON response into indexed content and image subtype."""
+    response_content = (response_content or "").strip()
+    if response_content.startswith("```"):
+        response_content = response_content.removeprefix("```json").removeprefix("```")
+        response_content = response_content.removesuffix("```").strip()
+
+    analysis = json.loads(response_content)
+    subtype = normalize_image_subtype(analysis.get("classification"))
+    content = analysis.get("content", "")
+    if not isinstance(content, str):
+        content = json.dumps(content, ensure_ascii=False, indent=2)
+    if not content.strip():
+        raise ValueError("Vision response did not contain image content.")
+    return {"subtype": subtype, "content": content.strip()}
+
+
 def extract_pdf_text_for_reading(pdf_path):
     """Extract readable text from a PDF for inline reading."""
     try:
@@ -38,32 +70,71 @@ def extract_pdf_text_for_reading(pdf_path):
 
 
 def describe_image_with_vision(image_bytes):
-    """Describe actual image pixels with a vision model, using OCR as a hint."""
+    """Classify and analyze an image, using local OCR as a supplementary hint."""
     try:
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         ocr_text = pytesseract.image_to_string(img).strip()
+
         image_buffer = io.BytesIO()
         img.save(image_buffer, format="PNG")
         encoded_image = base64.b64encode(image_buffer.getvalue()).decode("ascii")
-        prompt = "Describe the visible image concisely and include readable text. Do not invent details."
+
+        prompt = """Analyze this image and return a JSON object with exactly two fields:
+"classification" and "content".
+
+Classify the image as exactly one of: "photo/logo", "chart or graph", "table", or
+"diagram". Format "content" according to that classification:
+- For "photo/logo", give the same kind of direct, concise prose description you
+  would normally provide, including important objects, logos, and readable text.
+- For "table", transcribe the underlying data as a markdown table. Preserve headers,
+  row labels, values, units, and footnotes as accurately as the image allows.
+- For "chart or graph", provide a structured markdown list containing the chart type,
+  title, axis labels and units, legend/series, approximate data points, and overall trend.
+- For "diagram", concisely describe its labeled components, relationships, and flow.
+
+Use the actual image as the source of truth. Do not invent unreadable values."""
         if ocr_text:
-            prompt += f"\n\nOCR hint (verify against the image):\n{ocr_text}"
+            prompt += (
+                "\n\nLocal OCR extracted the following supplementary text. Verify it "
+                f"against the image rather than relying on it alone:\n\n{ocr_text}"
+            )
+        else:
+            prompt += "\n\nLocal OCR did not extract any readable text."
+
         client = OpenAIClient(api_key=config.get_openai_api_key())
         response = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": [
-                {"type": "text", "text": prompt},
-                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded_image}"}},
-            ]}],
-            max_tokens=500,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{encoded_image}"
+                            },
+                        },
+                    ],
+                }
+            ],
+            max_tokens=1000,
+            response_format={"type": "json_object"},
         )
-        content = response.choices[0].message.content
-        if not content:
-            raise ValueError("Vision response was empty.")
-        return {"subtype": "unknown", "content": content}
+        try:
+            return parse_vision_analysis(response.choices[0].message.content)
+        except Exception:
+            logger.exception("Vision response did not contain valid classified content")
+            return {
+                "subtype": "unknown",
+                "content": IMAGE_DESCRIPTION_UNAVAILABLE,
+            }
     except Exception:
         logger.exception("Failed to describe image")
-        return {"subtype": "unknown", "content": IMAGE_DESCRIPTION_UNAVAILABLE}
+        return {
+            "subtype": "unknown",
+            "content": IMAGE_DESCRIPTION_UNAVAILABLE,
+        }
 
 
 def extract_text_and_images_from_pdf(pdf_path):
