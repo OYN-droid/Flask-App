@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import sqlite3
 
 from flask import current_app, flash, redirect, render_template, request, send_file, url_for
@@ -17,6 +18,7 @@ def render_index(
     read_text=None,
     question=None,
     answer=None,
+    sources=None,
 ):
     """Render the index page with its complete shared template context."""
     current_document = (
@@ -30,8 +32,55 @@ def render_index(
         read_text=read_text,
         question=question,
         answer=answer,
+        sources=sources or [],
         openai_key_available=config.is_openai_key_available(),
     )
+
+
+def summarize_source_documents(source_documents, default_document=None):
+    """Build one concise source summary per document and page."""
+    sources = []
+    seen_sources = set()
+
+    for source_document in source_documents or []:
+        metadata = source_document.metadata or {}
+        page = metadata.get("page")
+        document_name = (
+            metadata.get("original_filename")
+            or default_document
+            or metadata.get("collection_name")
+            or "Unknown document"
+        )
+        source_key = (document_name, page)
+        if page is None or source_key in seen_sources:
+            continue
+        seen_sources.add(source_key)
+
+        is_image = metadata.get("type") == "image"
+        content = source_document.page_content or ""
+        content = re.sub(
+            rf"^\s*Page\s+{re.escape(str(page))}(?:\s+Image\s+\d+)?:\s*",
+            "",
+            content,
+            count=1,
+            flags=re.IGNORECASE,
+        )
+        content = " ".join(content.split())
+        if len(content) > 200:
+            content = f"{content[:200].rstrip()}…"
+        if is_image:
+            content = f"Image description: {content}"
+
+        sources.append(
+            {
+                "document": document_name,
+                "page": page,
+                "excerpt": content,
+                "is_image": is_image,
+            }
+        )
+
+    return sources
 
 
 def index():
@@ -270,7 +319,13 @@ def ask():
 
     try:
         qa_chain = vector_store.get_qa_chain(documentation)
-        answer = qa_chain.run(question)
+        result = qa_chain.invoke({"query": question})
+        answer = result["result"]
+        document = vector_store.get_document_metadata(documentation)
+        sources = summarize_source_documents(
+            result.get("source_documents", []),
+            default_document=document["original_filename"],
+        )
     except Exception:
         logger.exception("Failed to answer question for document %s", documentation)
         flash("Failed to answer the question. Please try again.")
@@ -280,6 +335,7 @@ def ask():
         current_doc=documentation,
         question=question,
         answer=answer,
+        sources=sources,
     )
 
 

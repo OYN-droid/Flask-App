@@ -491,6 +491,25 @@
       .card p:first-child { margin-top: 0; }
       .card p:last-child { margin-bottom: 0; }
 
+      .answer-sources {
+        margin-top: 1.25rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+      }
+
+      .answer-sources details {
+        margin-top: 0.55rem;
+        padding: 0.65rem 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: 0.55rem;
+        background: var(--surface-strong);
+      }
+
+      .answer-sources summary {
+        cursor: pointer;
+        font-weight: 750;
+      }
+
       .small {
         margin: 0;
         color: var(--text-muted);
@@ -667,6 +686,22 @@
               <p><strong>Question:</strong> {{ question }}</p>
               <p><strong>Answer:</strong></p>
               <p>{{ answer }}</p>
+              {% if sources %}
+                <div class="answer-sources">
+                  <p>
+                    <strong>Sources:</strong>
+                    {% for source in sources %}
+                      {{ source.document }} page {{ source.page }}{% if source.is_image %} (image){% endif %}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                  </p>
+                  {% for source in sources %}
+                    <details>
+                      <summary>{{ source.document }} — Page {{ source.page }}{% if source.is_image %} (image){% endif %}</summary>
+                      <p>{{ source.excerpt }}</p>
+                    </details>
+                  {% endfor %}
+                </div>
+              {% endif %}
             </div>
           </section>
         {% endif %}

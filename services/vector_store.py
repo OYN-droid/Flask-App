@@ -223,4 +223,9 @@ def get_qa_chain(collection_name):
         collection_name=collection_name,
     ).as_retriever(search_kwargs={"k": 4})
     llm = OpenAI(temperature=0, openai_api_key=api_key)
-    return RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever)
+    return RetrievalQA.from_chain_type(
+        llm=llm,
+        chain_type="stuff",
+        retriever=retriever,
+        return_source_documents=True,
+    )
