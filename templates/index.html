@@ -413,6 +413,29 @@
         font-weight: 850;
       }
 
+      .document-select {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        margin: 0;
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      .document-select input {
+        width: 1.1rem;
+        height: 1.1rem;
+        margin: 0;
+      }
+
+      .multi-ask-panel {
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px solid var(--border);
+        border-radius: 0.75rem;
+        background: var(--surface-strong);
+      }
+
       .document-actions {
         display: flex;
         align-items: center;
@@ -641,7 +664,16 @@
             <ul class="document-list">
               {% for document in documents %}
                 <li class="document-item">
-                  <span class="document-name">{{ document.original_filename }}</span>
+                  <label class="document-select">
+                    <input
+                      type="checkbox"
+                      name="document_names"
+                      value="{{ document.collection_name }}"
+                      form="multi-ask-form"
+                      data-multi-document
+                    />
+                    <span class="document-name">{{ document.original_filename }}</span>
+                  </label>
                   <div class="document-actions">
                     <a class="button-link primary" href="{{ url_for('open_document', doc=document.collection_name) }}" target="_blank" rel="noopener">Open PDF</a>
                     <a class="button-link secondary" href="{{ url_for('index', doc=document.collection_name) }}">Ask</a>
@@ -655,6 +687,13 @@
                 </li>
               {% endfor %}
             </ul>
+            <div class="multi-ask-panel" id="multi-ask-panel" hidden>
+              <form id="multi-ask-form" action="{{ url_for('ask_multi') }}" method="post">
+                <label for="multi-question">Question across selected documents</label>
+                <textarea id="multi-question" name="question" rows="3" required></textarea>
+                <button class="ask-button" type="submit">Ask across selected</button>
+              </form>
+            </div>
           {% else %}
             <p class="small">No documents indexed yet. Upload a PDF to get started.</p>
           {% endif %}
@@ -745,6 +784,21 @@
       const dropzone = document.getElementById('dropzone');
       const fileInput = document.getElementById('pdf_file');
       const uploadActionButton = document.getElementById('upload-action-button');
+      const multiDocumentCheckboxes = Array.from(document.querySelectorAll('[data-multi-document]'));
+      const multiAskPanel = document.getElementById('multi-ask-panel');
+
+      function updateMultiAskPanel() {
+        if (!multiAskPanel) {
+          return;
+        }
+        const selectedCount = multiDocumentCheckboxes.filter((checkbox) => checkbox.checked).length;
+        multiAskPanel.hidden = selectedCount < 2;
+      }
+
+      multiDocumentCheckboxes.forEach((checkbox) => {
+        checkbox.addEventListener('change', updateMultiAskPanel);
+      });
+
       function setDropzoneMessage(message) {
         const hint = dropzone.querySelector('.drop-hint');
         if (hint) {

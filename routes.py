@@ -369,6 +369,39 @@ def ask():
     )
 
 
+def ask_multi():
+    collection_names = list(dict.fromkeys(request.form.getlist("document_names")))
+    question = request.form.get("question")
+
+    if len(collection_names) < 2:
+        flash("Select at least two documents to ask across.")
+        return redirect(url_for("index"))
+    if not question:
+        flash("Please enter a question.")
+        return redirect(url_for("index"))
+    if not config.is_openai_key_available():
+        flash(
+            "OpenAI API key is missing. Set OPENAI_API_KEY or OPENAI_ADMIN_KEY and restart the app."
+        )
+        return redirect(url_for("index"))
+
+    available_collections = set(vector_store.list_collections())
+    if any(name not in available_collections for name in collection_names):
+        flash("One or more selected documents are not available. Please select them again.")
+        return redirect(url_for("index"))
+
+    try:
+        result = vector_store.answer_across_documents(collection_names, question)
+        answer = result["result"]
+        sources = summarize_source_documents(result.get("source_documents", []))
+    except Exception:
+        logger.exception("Failed to answer question across selected documents")
+        flash("Failed to answer the question. Please try again.")
+        return redirect(url_for("index"))
+
+    return render_index(question=question, answer=answer, sources=sources)
+
+
 def register_routes(app):
     """Register routes while preserving the app's existing endpoint names and paths."""
     app.add_url_rule("/", endpoint="index", view_func=index, methods=["GET"])
@@ -402,4 +435,7 @@ def register_routes(app):
     )
     app.add_url_rule("/upload", endpoint="upload", view_func=upload, methods=["POST"])
     app.add_url_rule("/ask", endpoint="ask", view_func=ask, methods=["POST"])
+    app.add_url_rule(
+        "/ask-multi", endpoint="ask_multi", view_func=ask_multi, methods=["POST"]
+    )
     app.register_error_handler(RequestEntityTooLarge, handle_request_entity_too_large)

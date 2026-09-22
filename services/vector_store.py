@@ -8,8 +8,9 @@ import sqlite3
 import chromadb
 from langchain_community.llms import OpenAI
 from langchain_community.vectorstores import Chroma
-from langchain_openai import OpenAIEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.documents import Document
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import PromptTemplate
 from werkzeug.utils import secure_filename
 
@@ -399,3 +400,95 @@ def get_qa_chain(collection_name):
         retriever=retriever,
         return_source_documents=True,
     )
+
+
+def retrieve_across_collections(
+    collection_names, question, per_collection_k=4, max_chunks=8
+):
+    """Retrieve from each collection and globally rank the merged chunks by distance."""
+    embeddings = OpenAIEmbeddings(openai_api_key=config.get_openai_api_key())
+    query_embedding = embeddings.embed_query(question)
+    ranked_documents = []
+
+    for collection_name in collection_names:
+        document_metadata = get_document_metadata(collection_name)
+        original_filename = (
+            document_metadata["original_filename"]
+            if document_metadata
+            else collection_name
+        )
+        collection = chroma_client.get_collection(name=collection_name)
+        result = collection.query(
+            query_embeddings=[query_embedding],
+            n_results=per_collection_k,
+            include=["documents", "metadatas", "distances"],
+        )
+        documents = (result.get("documents") or [[]])[0]
+        metadatas = (result.get("metadatas") or [[]])[0]
+        distances = (result.get("distances") or [[]])[0]
+
+        for index, content in enumerate(documents):
+            if not content or not content.strip():
+                continue
+            metadata = dict(metadatas[index] or {}) if index < len(metadatas) else {}
+            metadata.update(
+                {
+                    "collection_name": collection_name,
+                    "original_filename": original_filename,
+                }
+            )
+            distance = distances[index] if index < len(distances) else float("inf")
+            if not isinstance(distance, (int, float)):
+                distance = float("inf")
+            ranked_documents.append(
+                (distance, Document(page_content=content, metadata=metadata))
+            )
+
+    ranked_documents.sort(key=lambda item: item[0])
+    return [document for _, document in ranked_documents[:max_chunks]]
+
+
+def get_multi_document_llm():
+    return ChatOpenAI(
+        model="gpt-4o-mini",
+        temperature=0,
+        api_key=config.get_openai_api_key(),
+    )
+
+
+def answer_across_documents(collection_names, question):
+    """Answer one question from a globally ranked multi-document context."""
+    source_documents = retrieve_across_collections(collection_names, question)
+    if not source_documents:
+        raise ValueError("No relevant document content was found.")
+
+    context_sections = []
+    for document in source_documents:
+        metadata = document.metadata
+        source_label = metadata.get("original_filename", "Unknown document")
+        page = metadata.get("page")
+        if page is not None:
+            source_label = f"{source_label}, page {page}"
+        context_sections.append(f"[Source: {source_label}]\n{document.page_content}")
+
+    response = get_multi_document_llm().invoke(
+        [
+            SystemMessage(
+                content=(
+                    "Answer the user's question using only the supplied document "
+                    "context. If the context is insufficient, say so. Synthesize "
+                    "information across documents when useful."
+                )
+            ),
+            HumanMessage(
+                content=(
+                    f"Question:\n{question}\n\nDocument context:\n"
+                    + "\n\n".join(context_sections)
+                )
+            ),
+        ]
+    )
+    answer = response.content
+    if not isinstance(answer, str):
+        answer = str(answer)
+    return {"result": answer, "source_documents": source_documents}
