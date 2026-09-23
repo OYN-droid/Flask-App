@@ -18,10 +18,12 @@
         --flash-border: #ffb15c;
         --input-bg: #ffffff;
         --knicks-blue: #006bb6;
-        --knicks-blue-dark: #004c91;
         --knicks-orange: #f58426;
-        --knicks-orange-dark: #d96d13;
-        --shadow: rgba(0, 54, 112, 0.12);
+        --shadow: rgba(16, 24, 40, 0.08);
+        --shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
+        --radius-sm: 0.6rem;
+        --radius-md: 0.85rem;
+        --radius-lg: 1.1rem;
         --hero-grid: rgba(0, 107, 182, 0.08);
       }
 
@@ -37,11 +39,8 @@
         --flash-bg: #251708;
         --flash-border: #f58426;
         --input-bg: #0b111b;
-        --knicks-blue: #1d8ee8;
-        --knicks-blue-dark: #006bb6;
-        --knicks-orange: #ff9d3a;
-        --knicks-orange-dark: #f58426;
-        --shadow: rgba(0, 0, 0, 0.45);
+        --shadow: rgba(0, 0, 0, 0.28);
+        --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.18);
         --hero-grid: rgba(29, 142, 232, 0.12);
       }
 
@@ -55,14 +54,16 @@
         font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         color: var(--text);
         background:
-          linear-gradient(135deg, rgba(0, 107, 182, 0.16), rgba(255, 255, 255, 0.78) 42%, rgba(245, 132, 38, 0.16)),
+          radial-gradient(circle at 10% 0%, rgba(0, 107, 182, 0.1), transparent 30rem),
+          radial-gradient(circle at 90% 15%, rgba(245, 132, 38, 0.08), transparent 26rem),
           var(--bg);
         transition: background 0.25s, color 0.25s;
       }
 
       [data-theme="dark"] body {
         background:
-          linear-gradient(135deg, rgba(0, 107, 182, 0.28), rgba(5, 6, 9, 0.92) 46%, rgba(245, 132, 38, 0.22)),
+          radial-gradient(circle at 10% 0%, rgba(0, 107, 182, 0.2), transparent 30rem),
+          radial-gradient(circle at 90% 15%, rgba(245, 132, 38, 0.12), transparent 26rem),
           var(--bg);
       }
 
@@ -75,8 +76,8 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        min-height: 4.4rem;
-        padding: 0 1.6rem;
+        min-height: 4rem;
+        padding: 0 1.5rem;
         background: rgba(255, 255, 255, 0.9);
         border-bottom: 1px solid var(--border);
         backdrop-filter: blur(16px);
@@ -96,15 +97,11 @@
       }
 
       .brand-mark {
-        display: grid;
-        place-items: center;
-        width: 2.4rem;
-        height: 2.4rem;
-        border-radius: 0.7rem;
-        color: #fff;
-        background: linear-gradient(135deg, var(--knicks-blue), var(--knicks-orange));
-        font-size: 1.15rem;
-        box-shadow: 0 8px 22px rgba(0, 107, 182, 0.25);
+        display: block;
+        width: 2.35rem;
+        height: 2.35rem;
+        flex: 0 0 auto;
+        filter: drop-shadow(0 5px 10px rgba(0, 107, 182, 0.16));
       }
 
       .nav-links {
@@ -137,7 +134,7 @@
         cursor: pointer;
         font: inherit;
         font-weight: 800;
-        transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+        transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
       }
 
       .theme-toggle {
@@ -159,23 +156,37 @@
         transform: translateY(-1px);
       }
 
+      .theme-toggle:hover {
+        border-color: var(--knicks-blue);
+        box-shadow: 0 4px 12px var(--shadow);
+      }
+
+      button:focus-visible,
+      .button-link:focus-visible,
+      .theme-toggle:focus-visible,
+      .dropzone:focus-visible,
+      .document-select input:focus-visible {
+        outline: 3px solid rgba(0, 107, 182, 0.2);
+        outline-offset: 2px;
+      }
+
       .page-shell {
         width: min(100%, 1180px);
         margin: 0 auto;
-        padding: 4.2rem 1.4rem 4rem;
+        padding: 2.35rem 1.4rem 3.5rem;
       }
 
       .hero {
         position: relative;
         text-align: center;
-        padding: 2rem 0 1.4rem;
+        padding: 1rem 0 0.75rem;
       }
 
       .hero::before {
         content: "";
         position: absolute;
-        inset: -2rem 0 auto;
-        height: 17rem;
+        inset: -1.5rem 0 auto;
+        height: 13rem;
         background-image:
           linear-gradient(var(--hero-grid) 1px, transparent 1px),
           linear-gradient(90deg, var(--hero-grid) 1px, transparent 1px);
@@ -192,8 +203,8 @@
       h1 {
         margin: 0;
         color: var(--text);
-        font-size: clamp(2.35rem, 5vw, 4.2rem);
-        line-height: 1.04;
+        font-size: clamp(2.15rem, 4.4vw, 3.65rem);
+        line-height: 1.08;
         font-weight: 900;
       }
 
@@ -212,39 +223,39 @@
 
       .hero-copy {
         max-width: 760px;
-        margin: 1.25rem auto 0;
+        margin: 0.85rem auto 0;
         color: var(--text);
         font-size: clamp(1rem, 1.7vw, 1.18rem);
-        line-height: 1.65;
+        line-height: 1.55;
         font-weight: 650;
       }
 
       .upload-panel {
         position: relative;
-        margin-top: 2.2rem;
-        padding: clamp(2rem, 5vw, 4rem);
-        min-height: 28rem;
+        margin-top: 1.35rem;
+        padding: clamp(1.25rem, 3vw, 2.15rem);
+        min-height: 20rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 3px solid rgba(0, 107, 182, 0.18);
-        border-radius: 1.35rem;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-lg);
         background: var(--surface);
-        box-shadow: 0 28px 70px var(--shadow);
+        box-shadow: var(--shadow-soft);
       }
 
       [data-theme="dark"] .upload-panel {
-        border-color: rgba(245, 132, 38, 0.28);
+        border-color: var(--border-strong);
       }
 
       .upload-panel::after {
         content: "";
         position: absolute;
-        inset: -3px;
+        inset: -1px;
         border-radius: inherit;
         pointer-events: none;
-        border: 3px solid rgba(245, 132, 38, 0.16);
-        clip-path: polygon(52% 0, 100% 0, 100% 100%, 52% 100%);
+        border: 1px solid rgba(245, 132, 38, 0.25);
+        clip-path: polygon(72% 0, 100% 0, 100% 44%);
       }
 
       #upload-form {
@@ -262,11 +273,11 @@
       .dropzone {
         display: grid;
         justify-items: center;
-        gap: 1.15rem;
-        min-height: 17rem;
-        padding: 1.5rem;
+        gap: 0.85rem;
+        min-height: 13rem;
+        padding: 1.15rem;
         border: 2px dashed transparent;
-        border-radius: 1rem;
+        border-radius: var(--radius-md);
         color: var(--text-muted);
         cursor: pointer;
         transition: border-color 0.2s, background 0.2s, color 0.2s, transform 0.2s;
@@ -281,8 +292,8 @@
 
       .drop-illustration {
         position: relative;
-        width: 8rem;
-        height: 7rem;
+        width: 7rem;
+        height: 5.8rem;
         opacity: 0.95;
       }
 
@@ -295,18 +306,18 @@
       .file-sheet {
         left: 2.1rem;
         top: 0;
-        width: 4.7rem;
-        height: 5.4rem;
+        width: 4.2rem;
+        height: 4.7rem;
         background: linear-gradient(180deg, rgba(0, 107, 182, 0.18), rgba(255, 255, 255, 0.65));
       }
 
       .file-folder {
         left: 0.65rem;
         bottom: 0;
-        width: 6.9rem;
-        height: 3.9rem;
+        width: 6rem;
+        height: 3.35rem;
         background: linear-gradient(135deg, rgba(0, 107, 182, 0.28), rgba(245, 132, 38, 0.26));
-        box-shadow: 0 16px 36px rgba(0, 107, 182, 0.18);
+        box-shadow: 0 10px 24px rgba(0, 107, 182, 0.12);
       }
 
       .file-folder::before {
@@ -322,10 +333,10 @@
 
       .file-plus {
         position: absolute;
-        left: 3.5rem;
-        top: 3.55rem;
+        left: 3rem;
+        top: 2.9rem;
         color: rgba(0, 107, 182, 0.42);
-        font-size: 2.6rem;
+        font-size: 2.25rem;
         line-height: 1;
         font-weight: 800;
       }
@@ -334,17 +345,17 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 3.7rem;
-        padding: 0 1.9rem;
-        border-radius: 0.55rem;
+        min-height: 3.25rem;
+        padding: 0 1.55rem;
+        border-radius: var(--radius-sm);
         background: linear-gradient(135deg, var(--knicks-blue), var(--knicks-orange));
         color: #fff;
-        box-shadow: 0 14px 28px rgba(0, 107, 182, 0.25);
-        font-size: 1.05rem;
+        box-shadow: 0 7px 18px rgba(0, 107, 182, 0.18);
+        font-size: 1rem;
       }
 
       .upload-button:hover {
-        box-shadow: 0 18px 34px rgba(245, 132, 38, 0.26);
+        box-shadow: 0 9px 22px rgba(0, 107, 182, 0.22);
       }
 
       .drop-hint {
@@ -356,16 +367,16 @@
       .content-grid {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
-        gap: 1.4rem;
-        margin-top: 2rem;
+        gap: 1.1rem;
+        margin-top: 1.15rem;
       }
 
       .section {
         padding: clamp(1.1rem, 3vw, 1.55rem);
         border: 1px solid var(--border);
-        border-radius: 0.9rem;
+        border-radius: var(--radius-lg);
         background: rgba(255, 255, 255, 0.82);
-        box-shadow: 0 18px 40px var(--shadow);
+        box-shadow: var(--shadow-soft);
       }
 
       [data-theme="dark"] .section {
@@ -382,7 +393,7 @@
         margin: 0 0 1rem;
         padding: 0.9rem 1rem;
         border: 1px solid var(--flash-border);
-        border-radius: 0.75rem;
+        border-radius: var(--radius-md);
         background: var(--flash-bg);
         color: var(--text);
         font-weight: 650;
@@ -390,7 +401,7 @@
 
       .document-list {
         display: grid;
-        gap: 0.85rem;
+        gap: 0.7rem;
         margin: 0;
         padding: 0;
         list-style: none;
@@ -398,13 +409,19 @@
 
       .document-item {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 1rem;
+        grid-template-columns: minmax(12rem, 1fr) minmax(0, auto);
+        gap: 1.25rem;
         align-items: center;
-        padding: 1rem;
+        padding: 0.9rem 1rem;
         border: 1px solid var(--border);
-        border-radius: 0.75rem;
+        border-radius: var(--radius-md);
         background: var(--surface-strong);
+        transition: border-color 0.18s ease, box-shadow 0.18s ease;
+      }
+
+      .document-item:hover {
+        border-color: var(--border-strong);
+        box-shadow: 0 5px 16px var(--shadow);
       }
 
       .document-name {
@@ -416,7 +433,7 @@
       .document-select {
         display: inline-flex;
         align-items: center;
-        gap: 0.65rem;
+        gap: 0.75rem;
         margin: 0;
         color: var(--text);
         cursor: pointer;
@@ -426,22 +443,31 @@
         width: 1.1rem;
         height: 1.1rem;
         margin: 0;
+        accent-color: var(--knicks-blue);
       }
 
       .multi-ask-panel {
         margin-top: 1rem;
         padding: 1rem;
         border: 1px solid var(--border);
-        border-radius: 0.75rem;
+        border-radius: var(--radius-md);
         background: var(--surface-strong);
       }
 
       .document-actions {
+        display: grid;
+        grid-template-columns: auto minmax(10rem, 13rem);
+        align-items: center;
+        justify-content: end;
+        gap: 0.7rem;
+      }
+
+      .document-buttons {
         display: flex;
         align-items: center;
         justify-content: flex-end;
         flex-wrap: wrap;
-        gap: 0.55rem;
+        gap: 0.4rem;
       }
 
       .button-link,
@@ -450,19 +476,52 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 2.35rem;
-        padding: 0 0.9rem;
-        border-radius: 0.5rem;
-        color: #fff;
+        min-height: 2.5rem;
+        padding: 0 0.85rem;
+        border: 1px solid transparent;
+        border-radius: var(--radius-sm);
         text-decoration: none;
-        font-size: 0.92rem;
+        font-size: 0.88rem;
+        line-height: 1;
       }
 
-      .button-link.primary { background: var(--knicks-blue); }
-      .button-link.secondary { background: var(--knicks-orange); }
-      .button-link.summarize { background: #5b4bb7; }
-      .delete-button { background: #c7372f; }
-      .ask-button { background: linear-gradient(135deg, var(--knicks-blue), var(--knicks-orange)); }
+      .button-link.primary,
+      .ask-button {
+        color: #fff;
+        background: var(--knicks-blue);
+        box-shadow: 0 4px 10px rgba(0, 107, 182, 0.16);
+      }
+
+      .button-link.primary:hover,
+      .ask-button:hover {
+        background: var(--knicks-blue);
+        box-shadow: 0 6px 14px rgba(0, 107, 182, 0.22);
+        filter: brightness(0.92);
+      }
+
+      .button-link.secondary,
+      .button-link.summarize,
+      .delete-button {
+        color: var(--text-muted);
+        background: transparent;
+        border-color: var(--border-strong);
+        box-shadow: none;
+      }
+
+      .button-link.secondary:hover,
+      .button-link.summarize:hover {
+        color: var(--knicks-blue);
+        border-color: var(--knicks-blue);
+        background: rgba(0, 107, 182, 0.06);
+        box-shadow: 0 4px 10px var(--shadow);
+      }
+
+      .delete-button:hover {
+        color: var(--knicks-orange);
+        border-color: var(--knicks-orange);
+        background: rgba(245, 132, 38, 0.07);
+        box-shadow: 0 4px 10px var(--shadow);
+      }
 
       .delete-form {
         display: inline-flex;
@@ -470,8 +529,8 @@
       }
 
       audio {
-        width: 13rem;
-        height: 2.2rem;
+        width: 100%;
+        height: 2.4rem;
         max-width: 100%;
       }
 
@@ -486,7 +545,7 @@
         padding: 0.95rem;
         margin-bottom: 1rem;
         border: 1px solid var(--border-strong);
-        border-radius: 0.75rem;
+        border-radius: var(--radius-md);
         background: var(--input-bg);
         color: var(--text);
         font: inherit;
@@ -508,7 +567,7 @@
       .card {
         padding: 1rem;
         border: 1px solid var(--border);
-        border-radius: 0.75rem;
+        border-radius: var(--radius-md);
         background: var(--surface-strong);
       }
 
@@ -525,7 +584,7 @@
         margin-top: 0.55rem;
         padding: 0.65rem 0.75rem;
         border: 1px solid var(--border);
-        border-radius: 0.55rem;
+        border-radius: var(--radius-sm);
         background: var(--surface-strong);
       }
 
@@ -548,7 +607,20 @@
 
       @media (max-width: 920px) {
         .nav-links { display: none; }
-        .page-shell { padding-top: 2.4rem; }
+        .page-shell { padding-top: 1.75rem; }
+
+        .document-item {
+          grid-template-columns: 1fr;
+        }
+
+        .document-actions {
+          justify-content: stretch;
+          grid-template-columns: minmax(0, 1fr) minmax(10rem, 13rem);
+        }
+
+        .document-buttons {
+          justify-content: flex-start;
+        }
       }
 
       @media (max-width: 700px) {
@@ -567,8 +639,7 @@
         }
 
         .upload-panel {
-          min-height: 24rem;
-          border-width: 2px;
+          min-height: 18rem;
         }
 
         .document-item {
@@ -576,12 +647,10 @@
         }
 
         .document-actions {
-          justify-content: flex-start;
+          grid-template-columns: 1fr;
         }
 
-        audio {
-          width: 100%;
-        }
+        .audio-player { width: 100%; }
       }
     </style>
     <script>
@@ -594,7 +663,18 @@
   <body>
     <header class="topbar">
       <div class="brand">
-        <span class="brand-mark">PDF</span>
+        <svg class="brand-mark" viewBox="0 0 40 40" role="img" aria-label="PDF Reader logo">
+          <defs>
+            <linearGradient id="brand-gradient" x1="5" y1="4" x2="35" y2="36" gradientUnits="userSpaceOnUse">
+              <stop stop-color="var(--knicks-blue)" />
+              <stop offset="1" stop-color="var(--knicks-orange)" />
+            </linearGradient>
+          </defs>
+          <path d="M11 3.75h12.2L32.5 13v20.5a2.75 2.75 0 0 1-2.75 2.75H11A3.5 3.5 0 0 1 7.5 32.75V7.25A3.5 3.5 0 0 1 11 3.75Z" fill="url(#brand-gradient)" />
+          <path d="M23 3.75V10a3 3 0 0 0 3 3h6.5" fill="none" stroke="rgba(255,255,255,.72)" stroke-width="1.5" />
+          <path d="M13 20.25h14M13 25h10M13 29.75h7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" />
+          <path d="m29.5 24 .85 1.85L32.25 27l-1.9 1.15L29.5 30l-.85-1.85L26.75 27l1.9-1.15L29.5 24Z" fill="#fff" />
+        </svg>
         <span>PDF Reader &amp; Analyzer</span>
       </div>
       <nav class="nav-links" aria-label="Primary">
@@ -675,13 +755,15 @@
                     <span class="document-name">{{ document.original_filename }}</span>
                   </label>
                   <div class="document-actions">
-                    <a class="button-link primary" href="{{ url_for('open_document', doc=document.collection_name) }}" target="_blank" rel="noopener">Open PDF</a>
-                    <a class="button-link secondary" href="{{ url_for('index', doc=document.collection_name) }}">Ask</a>
-                    <a class="button-link summarize" href="{{ url_for('summarize_document', document_name=document.collection_name) }}">Summarize</a>
-                    <form class="delete-form" action="{{ url_for('delete_document') }}" method="post">
-                      <input type="hidden" name="document_name" value="{{ document.collection_name }}" />
-                      <button class="delete-button" type="submit">Delete</button>
-                    </form>
+                    <div class="document-buttons">
+                      <a class="button-link primary" href="{{ url_for('open_document', doc=document.collection_name) }}" target="_blank" rel="noopener">Open PDF</a>
+                      <a class="button-link secondary" href="{{ url_for('index', doc=document.collection_name) }}">Ask</a>
+                      <a class="button-link summarize" href="{{ url_for('summarize_document', document_name=document.collection_name) }}">Summarize</a>
+                      <form class="delete-form" action="{{ url_for('delete_document') }}" method="post">
+                        <input type="hidden" name="document_name" value="{{ document.collection_name }}" />
+                        <button class="delete-button" type="submit">Delete</button>
+                      </form>
+                    </div>
                     <audio controls preload="none" src="{{ url_for('listen_document', document_name=document.collection_name) }}"></audio>
                   </div>
                 </li>
