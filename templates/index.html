@@ -161,6 +161,13 @@
         box-shadow: 0 4px 12px var(--shadow);
       }
 
+      .theme-icon {
+        width: 1.15rem;
+        height: 1.15rem;
+        display: block;
+        color: currentColor;
+      }
+
       button:focus-visible,
       .button-link:focus-visible,
       .theme-toggle:focus-visible,
@@ -687,7 +694,9 @@
       </nav>
       <div class="top-actions">
         <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
-          Moon
+          <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20.2 15.35A8.4 8.4 0 0 1 8.65 3.8 8.5 8.5 0 1 0 20.2 15.35Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
         </button>
       </div>
     </header>
@@ -850,9 +859,23 @@
     </main>
 
     <script>
+      const moonIcon = `
+        <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.2 15.35A8.4 8.4 0 0 1 8.65 3.8 8.5 8.5 0 1 0 20.2 15.35Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>`;
+      const sunIcon = `
+        <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="3.75" fill="none" stroke="currentColor" stroke-width="1.8" />
+          <path d="M12 2.25v2.1M12 19.65v2.1M2.25 12h2.1M19.65 12h2.1M5.1 5.1l1.5 1.5M17.4 17.4l1.5 1.5M18.9 5.1l-1.5 1.5M6.6 17.4l-1.5 1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>`;
+
+      function updateThemeToggleIcon(theme) {
+        document.getElementById('theme-toggle').innerHTML = theme === 'dark' ? sunIcon : moonIcon;
+      }
+
       (function () {
         const theme = document.documentElement.getAttribute('data-theme');
-        document.getElementById('theme-toggle').textContent = theme === 'dark' ? 'Sun' : 'Moon';
+        updateThemeToggleIcon(theme);
       })();
 
       function toggleTheme() {
@@ -860,7 +883,7 @@
         const next = current === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', next);
         localStorage.setItem('theme', next);
-        document.getElementById('theme-toggle').textContent = next === 'dark' ? 'Sun' : 'Moon';
+        updateThemeToggleIcon(next);
       }
 
       const dropzone = document.getElementById('dropzone');
