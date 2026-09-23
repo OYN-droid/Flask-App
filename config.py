@@ -4,16 +4,18 @@ from dotenv import load_dotenv
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
-PERSIST_DIR = os.path.join(BASE_DIR, "db")
-AUDIO_FOLDER = os.path.join(BASE_DIR, "audio")
+
+# Environment values must be loaded before resolving configurable storage paths.
+load_dotenv(os.path.join(BASE_DIR, ".env"))
+
+DATA_DIR = os.path.abspath(os.environ.get("DATA_DIR") or BASE_DIR)
+UPLOAD_FOLDER = os.path.join(DATA_DIR, "uploads")
+PERSIST_DIR = os.path.join(DATA_DIR, "db")
+AUDIO_FOLDER = os.path.join(DATA_DIR, "audio")
 METADATA_DB_PATH = os.path.join(PERSIST_DIR, "documents.sqlite3")
 ALLOWED_EXTENSIONS = {"pdf"}
 DEFAULT_MAX_UPLOAD_MB = 50
 TTS_MAX_CHARS = 4096
-
-# Environment values must be loaded before app startup validates its configuration.
-load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 
 def ensure_storage_directories():
@@ -55,6 +57,11 @@ def get_openai_api_key():
             "OpenAI API key is not set. Set OPENAI_API_KEY or OPENAI_ADMIN_KEY in your environment."
         )
     return key
+
+
+def get_site_password():
+    """Return the optional shared password used to protect deployed instances."""
+    return os.environ.get("SITE_PASSWORD", "")
 
 
 def allowed_file(filename):

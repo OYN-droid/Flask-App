@@ -35,9 +35,14 @@ def isolated_app(tmp_path, monkeypatch):
     )
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_ADMIN_KEY", raising=False)
+    monkeypatch.delenv("SITE_PASSWORD", raising=False)
 
     vector_store.initialize_metadata_store()
-    app_module.app.config.update(TESTING=True, SECRET_KEY="pytest-session-secret")
+    app_module.app.config.update(
+        TESTING=True,
+        SECRET_KEY="pytest-session-secret",
+        SITE_PASSWORD="",
+    )
 
     return SimpleNamespace(
         app=app_module.app,
@@ -101,6 +106,42 @@ def test_index_returns_200(isolated_app):
     response = isolated_app.client.get("/")
 
     assert response.status_code == 200
+
+
+def test_site_password_gate_is_inactive_when_unset(isolated_app, monkeypatch):
+    monkeypatch.delenv("SITE_PASSWORD", raising=False)
+    ungated_app = app_module.create_app()
+    ungated_app.config.update(TESTING=True, SECRET_KEY="pytest-ungated-secret")
+    client = ungated_app.test_client()
+
+    assert client.get("/").status_code == 200
+    assert client.get("/login").status_code == 302
+
+
+def test_site_password_gate_requires_successful_login(isolated_app, monkeypatch):
+    monkeypatch.setenv("SITE_PASSWORD", "shared-test-password")
+    gated_app = app_module.create_app()
+    gated_app.config.update(TESTING=True, SECRET_KEY="pytest-gated-secret")
+    client = gated_app.test_client()
+
+    protected_response = client.get("/")
+    assert protected_response.status_code == 302
+    assert protected_response.headers["Location"].endswith("/login")
+    assert client.get("/login").status_code == 200
+    assert client.get("/static/missing.css").status_code == 404
+
+    rejected_response = client.post(
+        "/login", data={"password": "wrong-password"}
+    )
+    assert rejected_response.status_code == 401
+    assert b"Incorrect password." in rejected_response.data
+
+    accepted_response = client.post(
+        "/login", data={"password": "shared-test-password"}
+    )
+    assert accepted_response.status_code == 302
+    assert accepted_response.headers["Location"].endswith("/")
+    assert client.get("/").status_code == 200
 
 
 def test_upload_rejects_non_pdf(isolated_app, monkeypatch):

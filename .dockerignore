@@ -1,0 +1,8 @@
+.venv/
+uploads/
+db/
+audio/
+.env
+**/__pycache__/
+.git/
+tests/

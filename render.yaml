@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: pdf-reader-analyzer
+    runtime: docker
+    plan: 0.5c-512mb
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    disk:
+      name: app-data
+      mountPath: /var/data
+      sizeGB: 2
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: SITE_PASSWORD
+        sync: false
+      - key: DATA_DIR
+        value: /var/data
+      - key: MAX_UPLOAD_MB
+        value: "50"
