@@ -265,6 +265,31 @@ def summarize_document(document_name):
     )
 
 
+def regenerate_summary(document_name):
+    document = vector_store.get_document_metadata(document_name)
+    if not document:
+        flash("The selected document is not available.")
+        return redirect(url_for("index"))
+    if not config.is_openai_key_available():
+        flash(
+            "OpenAI API key is missing. Set OPENAI_API_KEY or OPENAI_ADMIN_KEY and restart the app."
+        )
+        return redirect(url_for("index", doc=document_name))
+
+    try:
+        document_summary = vector_store.summarize_document(document_name, force=True)
+    except Exception:
+        logger.exception("Failed to regenerate summary for document %s", document_name)
+        flash("Failed to regenerate the document summary. Please try again.")
+        return redirect(url_for("index", doc=document_name))
+
+    flash("Document summary regenerated.")
+    return render_index(
+        current_doc=document_name,
+        document_summary=document_summary,
+    )
+
+
 def upload():
     if "pdf_file" not in request.files:
         flash("No file part in the request.")
@@ -432,6 +457,12 @@ def register_routes(app):
         endpoint="summarize_document",
         view_func=summarize_document,
         methods=["GET"],
+    )
+    app.add_url_rule(
+        "/summarize/<document_name>/regenerate",
+        endpoint="regenerate_summary",
+        view_func=regenerate_summary,
+        methods=["POST"],
     )
     app.add_url_rule("/upload", endpoint="upload", view_func=upload, methods=["POST"])
     app.add_url_rule("/ask", endpoint="ask", view_func=ask, methods=["POST"])

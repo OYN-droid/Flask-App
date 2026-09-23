@@ -1005,6 +1005,9 @@
                   {% endfor %}
                 </ul>
               {% endif %}
+              <form action="{{ url_for('regenerate_summary', document_name=current_doc) }}" method="post">
+                <button class="button-link secondary" type="submit">Regenerate summary</button>
+              </form>
             </div>
           </section>
         {% endif %}

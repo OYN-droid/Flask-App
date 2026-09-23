@@ -11,7 +11,6 @@ from langchain_community.vectorstores import Chroma
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.prompts import PromptTemplate
 from werkzeug.utils import secure_filename
 
 import config
@@ -24,10 +23,8 @@ except ImportError:  # LangChain < 0.3
 
 try:
     from langchain_classic.chains import RetrievalQA
-    from langchain_classic.chains.summarize import load_summarize_chain
 except ImportError:  # LangChain < 1.0
     from langchain.chains import RetrievalQA
-    from langchain.chains.summarize import load_summarize_chain
 
 
 logger = logging.getLogger(__name__)
@@ -281,67 +278,85 @@ def get_indexed_documents(collection_name):
     ]
 
 
-def get_summarization_chain():
-    """Create a map-reduce chain suitable for documents larger than one context window."""
-    llm = OpenAI(temperature=0, openai_api_key=config.get_openai_api_key())
-    map_prompt = PromptTemplate.from_template(
-        """Extract the important facts, conclusions, and recommendations from this
-document chunk. Be concise and factual so the notes can be combined later.
-
-Chunk:
-{text}
-
-Concise notes:"""
-    )
-    combine_prompt = PromptTemplate.from_template(
-        """Combine these notes into a useful document summary. Return exactly these
-two labeled sections. The executive summary must be 2-3 sentences. Include 5-10
-concise key points when the source material supports that many.
-
-EXECUTIVE SUMMARY:
-<summary>
-
-KEY POINTS:
-- <key point>
-
-Notes:
-{text}"""
-    )
-    return load_summarize_chain(
-        llm,
-        chain_type="map_reduce",
-        map_prompt=map_prompt,
-        combine_prompt=combine_prompt,
+def get_summarization_llm():
+    return ChatOpenAI(
+        model="gpt-4o-mini",
+        temperature=0,
+        api_key=config.get_openai_api_key(),
     )
 
 
-def parse_summary_output(output_text):
-    """Split the summarization chain's labeled output into structured fields."""
-    output_text = output_text.strip()
-    match = re.search(
-        r"EXECUTIVE SUMMARY:\s*(.*?)\s*KEY POINTS:\s*(.*)",
-        output_text,
-        flags=re.IGNORECASE | re.DOTALL,
+def document_summary_context(documents):
+    """Combine indexed chunks in document order for the two summary requests."""
+    return "\n\n".join(document.page_content for document in documents)
+
+
+def message_text(response):
+    """Return plain text from a chat model response."""
+    content = response.content
+    if not isinstance(content, str):
+        raise ValueError("The summarization model returned non-text content.")
+    return content.strip()
+
+
+def parse_key_points_json(output_text):
+    """Validate a model-produced JSON array of five to ten key-point strings."""
+    try:
+        key_points = json.loads(output_text)
+    except json.JSONDecodeError as exc:
+        raise ValueError("The summarization model returned invalid key-point JSON.") from exc
+
+    if not isinstance(key_points, list) or not 5 <= len(key_points) <= 10:
+        raise ValueError("The summarization model must return 5-10 key points.")
+
+    normalized_points = []
+    for point in key_points:
+        if not isinstance(point, str) or not point.strip():
+            raise ValueError("Every key point must be a non-empty string.")
+        normalized_points.append(" ".join(point.split()))
+    return normalized_points
+
+
+def generate_summary_fields(documents):
+    """Generate the executive summary and key points with separate model calls."""
+    context = document_summary_context(documents)
+    llm = get_summarization_llm()
+
+    summary_response = llm.invoke(
+        [
+            SystemMessage(
+                content=(
+                    "Write an executive summary of the supplied document. Respond with "
+                    "only 2-3 complete sentences of prose. Do not include a heading, "
+                    "bullets, fragments, or introductory text."
+                )
+            ),
+            HumanMessage(content=f"Document:\n\n{context}"),
+        ]
     )
-    if not match:
-        return output_text, []
+    executive_summary = " ".join(message_text(summary_response).split())
+    if not executive_summary:
+        raise ValueError("The summarization model returned an empty summary.")
 
-    executive_summary = " ".join(match.group(1).split())
-    key_points = [
-        point.strip()
-        for point in re.findall(
-            r"^\s*(?:[-*•]|\d+[.)])\s+(.+?)\s*$",
-            match.group(2),
-            flags=re.MULTILINE,
-        )
-        if point.strip()
-    ]
-    return executive_summary, key_points[:10]
+    key_points_response = llm.invoke(
+        [
+            SystemMessage(
+                content=(
+                    "Extract the most useful key points from the supplied document. "
+                    "Respond with only a valid JSON array containing 5-10 concise, "
+                    "complete strings. Do not include markdown, a heading, or a JSON object."
+                )
+            ),
+            HumanMessage(content=f"Document:\n\n{context}"),
+        ]
+    )
+    key_points = parse_key_points_json(message_text(key_points_response))
+    return executive_summary, key_points
 
 
-def summarize_document(collection_name):
-    """Return a cached summary, generating and caching one on the first request."""
-    cached_summary = get_cached_summary(collection_name)
+def summarize_document(collection_name, force=False):
+    """Return a cached summary, optionally replacing it with a fresh result."""
+    cached_summary = None if force else get_cached_summary(collection_name)
     if cached_summary:
         return cached_summary
 
@@ -349,12 +364,7 @@ def summarize_document(collection_name):
     if not documents:
         raise ValueError("No indexed document content is available to summarize.")
 
-    result = get_summarization_chain().invoke({"input_documents": documents})
-    output_text = result.get("output_text", "")
-    executive_summary, key_points = parse_summary_output(output_text)
-    if not executive_summary:
-        raise ValueError("The summarization model returned an empty summary.")
-
+    executive_summary, key_points = generate_summary_fields(documents)
     cache_summary(collection_name, executive_summary, key_points)
     return get_cached_summary(collection_name)
 

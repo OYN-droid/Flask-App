@@ -321,39 +321,83 @@ def test_summarize_document_generates_then_uses_cached_summary(
     monkeypatch.setattr(
         vector_store, "get_indexed_documents", get_indexed_documents
     )
-    fake_chain = MagicMock()
-    fake_chain.invoke.return_value = {
-        "output_text": (
-            "EXECUTIVE SUMMARY:\n"
-            "This is the first summary sentence. This is the second sentence.\n\n"
-            "KEY POINTS:\n"
-            "- First key point\n"
-            "- Second key point"
-        )
-    }
-    get_summarization_chain = MagicMock(return_value=fake_chain)
+    fake_llm = MagicMock()
+    fake_llm.invoke.side_effect = [
+        SimpleNamespace(
+            content="This is the first summary sentence. This is the second sentence."
+        ),
+        SimpleNamespace(
+            content=json.dumps(
+                [
+                    "First key point",
+                    "Second key point",
+                    "Third key point",
+                    "Fourth key point",
+                    "Fifth key point",
+                ]
+            )
+        ),
+        SimpleNamespace(
+            content="This regenerated summary is complete. It replaces the cached result."
+        ),
+        SimpleNamespace(
+            content=json.dumps(
+                [
+                    "Updated point one",
+                    "Updated point two",
+                    "Updated point three",
+                    "Updated point four",
+                    "Updated point five",
+                ]
+            )
+        ),
+    ]
+    get_summarization_llm = MagicMock(return_value=fake_llm)
     monkeypatch.setattr(
-        vector_store, "get_summarization_chain", get_summarization_chain
+        vector_store, "get_summarization_llm", get_summarization_llm
     )
 
     first_response = isolated_app.client.get("/summarize/sample")
     second_response = isolated_app.client.get("/summarize/sample")
+    regenerated_response = isolated_app.client.post("/summarize/sample/regenerate")
 
     assert first_response.status_code == 200
     assert second_response.status_code == 200
-    get_summarization_chain.assert_called_once_with()
-    get_indexed_documents.assert_called_once_with("sample")
-    fake_chain.invoke.assert_called_once_with(
-        {"input_documents": indexed_documents}
-    )
+    assert regenerated_response.status_code == 200
+    assert get_summarization_llm.call_count == 2
+    assert get_indexed_documents.call_count == 2
+    assert fake_llm.invoke.call_count == 4
     assert b"Summary: Sample.pdf" in first_response.data
     assert b"This is the first summary sentence." in first_response.data
     assert b"First key point" in first_response.data
     assert b"Second key point" in second_response.data
     assert b'href="/summarize/sample"' in second_response.data
+    assert b'action="/summarize/sample/regenerate"' in second_response.data
+    assert b"This regenerated summary is complete." in regenerated_response.data
+    assert b"<li>Updated point one</li>" in regenerated_response.data
 
     cached_summary = vector_store.get_cached_summary("sample")
-    assert cached_summary["key_points"] == ["First key point", "Second key point"]
+    assert cached_summary["key_points"] == [
+        "Updated point one",
+        "Updated point two",
+        "Updated point three",
+        "Updated point four",
+        "Updated point five",
+    ]
+
+
+@pytest.mark.parametrize(
+    "model_output",
+    [
+        "- Not JSON",
+        '{"key_points": ["Wrong top-level shape"]}',
+        '["Too few points"]',
+        '["One", "Two", "Three", "Four", null]',
+    ],
+)
+def test_parse_key_points_json_rejects_malformed_output(model_output):
+    with pytest.raises(ValueError):
+        vector_store.parse_key_points_json(model_output)
 
 
 def test_reindex_invalidates_cached_summary(isolated_app, monkeypatch):
