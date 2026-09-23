@@ -4,8 +4,6 @@ A Flask app that turns uploaded PDFs into something you can search, question, an
 
 Built as a portfolio project to explore retrieval-augmented generation (RAG), multimodal document understanding, and running an LLM-backed app with real error handling, tests, and a modular codebase — not just a notebook demo.
 
-<!-- Add a screenshot or short GIF here once you have a clean one of the upload → ask → cited-answer flow. It's the single highest-value addition to this README. -->
-
 ## Features
 
 - **Upload and index PDFs** — text is extracted per page (via `pdfplumber`) and embedded images are described and classified (photo, chart, table, or diagram) using a vision-capable OpenAI model, with Tesseract OCR as a supplementary text hint. Everything is chunked and embedded into a per-document [Chroma](https://www.trychroma.com/) vector store.
