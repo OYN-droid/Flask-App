@@ -463,7 +463,7 @@
 
       .document-actions {
         display: grid;
-        grid-template-columns: auto minmax(10rem, 13rem);
+        grid-template-columns: auto minmax(15rem, 18rem);
         align-items: center;
         justify-content: end;
         gap: 0.7rem;
@@ -535,10 +535,168 @@
         margin: 0;
       }
 
-      audio {
+      .audio-player {
+        --seek-progress: 0%;
+        display: grid;
+        grid-template-columns: 2.35rem minmax(0, 1fr) 2.35rem;
+        align-items: center;
+        gap: 0.55rem;
         width: 100%;
-        height: 2.4rem;
-        max-width: 100%;
+        min-width: 0;
+        padding: 0.4rem 0.5rem;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+      }
+
+      .audio-player audio {
+        display: none;
+      }
+
+      .audio-icon-button {
+        display: grid;
+        place-items: center;
+        width: 2.35rem;
+        height: 2.35rem;
+        min-width: 2.35rem;
+        padding: 0;
+        border: 1px solid var(--border-strong);
+        border-radius: 50%;
+        color: var(--text-muted);
+        background: transparent;
+        box-shadow: none;
+      }
+
+      .audio-play-button {
+        color: #fff;
+        border-color: var(--knicks-blue);
+        background: var(--knicks-blue);
+      }
+
+      .audio-icon-button:hover {
+        color: var(--knicks-blue);
+        border-color: var(--knicks-blue);
+        background: rgba(0, 107, 182, 0.06);
+        box-shadow: 0 4px 10px var(--shadow);
+      }
+
+      .audio-play-button:hover {
+        color: #fff;
+        background: var(--knicks-blue);
+        filter: brightness(0.92);
+      }
+
+      .audio-icon-button:disabled {
+        cursor: wait;
+        transform: none;
+        filter: none;
+        opacity: 0.82;
+      }
+
+      .audio-control-icon {
+        display: block;
+        width: 1rem;
+        height: 1rem;
+      }
+
+      .audio-track {
+        display: grid;
+        gap: 0.25rem;
+        min-width: 0;
+      }
+
+      .audio-seek {
+        width: 100%;
+        height: 1rem;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 999px;
+        background: transparent;
+        cursor: pointer;
+        accent-color: var(--knicks-blue);
+        appearance: none;
+      }
+
+      .audio-seek::-webkit-slider-runnable-track {
+        height: 0.3rem;
+        border-radius: 999px;
+        background: linear-gradient(to right, var(--knicks-blue) var(--seek-progress), var(--border-strong) var(--seek-progress));
+      }
+
+      .audio-seek::-moz-range-track {
+        height: 0.3rem;
+        border-radius: 999px;
+        background: var(--border-strong);
+      }
+
+      .audio-seek::-moz-range-progress {
+        height: 0.3rem;
+        border-radius: 999px;
+        background: var(--knicks-blue);
+      }
+
+      .audio-seek::-webkit-slider-thumb {
+        width: 0.85rem;
+        height: 0.85rem;
+        margin-top: -0.275rem;
+        border: 2px solid var(--surface);
+        border-radius: 50%;
+        background: var(--knicks-blue);
+        box-shadow: 0 1px 4px var(--shadow);
+        appearance: none;
+      }
+
+      .audio-seek::-moz-range-thumb {
+        width: 0.85rem;
+        height: 0.85rem;
+        border: 2px solid var(--surface);
+        border-radius: 50%;
+        background: var(--knicks-blue);
+        box-shadow: 0 1px 4px var(--shadow);
+      }
+
+      .audio-seek:focus-visible {
+        outline: 3px solid rgba(0, 107, 182, 0.2);
+        outline-offset: 2px;
+      }
+
+      .audio-seek:disabled {
+        cursor: wait;
+        opacity: 0.5;
+      }
+
+      .audio-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        min-width: 0;
+        color: var(--text-muted);
+        font-size: 0.68rem;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+      }
+
+      .audio-error {
+        margin-left: auto;
+        overflow: hidden;
+        color: var(--knicks-orange);
+        font-weight: 750;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .audio-spinner {
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid rgba(255, 255, 255, 0.45);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: audio-spin 0.75s linear infinite;
+      }
+
+      @keyframes audio-spin {
+        to { transform: rotate(360deg); }
       }
 
       input[type=file] {
@@ -622,7 +780,7 @@
 
         .document-actions {
           justify-content: stretch;
-          grid-template-columns: minmax(0, 1fr) minmax(10rem, 13rem);
+          grid-template-columns: minmax(0, 1fr) minmax(15rem, 18rem);
         }
 
         .document-buttons {
@@ -773,7 +931,29 @@
                         <button class="delete-button" type="submit">Delete</button>
                       </form>
                     </div>
-                    <audio controls preload="none" src="{{ url_for('listen_document', document_name=document.collection_name) }}"></audio>
+                    <div class="audio-player" data-audio-player>
+                      <audio preload="none" src="{{ url_for('listen_document', document_name=document.collection_name) }}"></audio>
+                      <button class="audio-icon-button audio-play-button" type="button" data-audio-play aria-label="Play audio">
+                        <svg class="audio-control-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m9 7 8 5-8 5V7Z" fill="currentColor" />
+                        </svg>
+                      </button>
+                      <div class="audio-track">
+                        <input class="audio-seek" data-audio-seek type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek audio" disabled />
+                        <div class="audio-meta">
+                          <span data-audio-current>0:00</span>
+                          <span aria-hidden="true">/</span>
+                          <span data-audio-duration>--:--</span>
+                          <span class="audio-error" data-audio-error role="status" aria-live="polite"></span>
+                        </div>
+                      </div>
+                      <button class="audio-icon-button audio-mute-button" type="button" data-audio-mute aria-label="Mute audio">
+                        <svg class="audio-control-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M5 10v4h3l4 3.25V6.75L8 10H5Z" fill="currentColor" />
+                          <path d="M15 9.25a4 4 0 0 1 0 5.5M17.5 6.75a7.25 7.25 0 0 1 0 10.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </li>
               {% endfor %}
@@ -885,6 +1065,177 @@
         localStorage.setItem('theme', next);
         updateThemeToggleIcon(next);
       }
+
+      const audioIcons = {
+        play: `
+          <svg class="audio-control-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m9 7 8 5-8 5V7Z" fill="currentColor" />
+          </svg>`,
+        pause: `
+          <svg class="audio-control-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 7h3v10H8V7Zm5 0h3v10h-3V7Z" fill="currentColor" />
+          </svg>`,
+        volume: `
+          <svg class="audio-control-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 10v4h3l4 3.25V6.75L8 10H5Z" fill="currentColor" />
+            <path d="M15 9.25a4 4 0 0 1 0 5.5M17.5 6.75a7.25 7.25 0 0 1 0 10.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+          </svg>`,
+        muted: `
+          <svg class="audio-control-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 10v4h3l4 3.25V6.75L8 10H5Z" fill="currentColor" />
+            <path d="m16 10 4 4m0-4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>`,
+        loading: '<span class="audio-spinner" aria-hidden="true"></span>',
+      };
+
+      function formatAudioTime(seconds) {
+        if (!Number.isFinite(seconds) || seconds < 0) {
+          return '--:--';
+        }
+        const wholeSeconds = Math.floor(seconds);
+        const minutes = Math.floor(wholeSeconds / 60);
+        const remainingSeconds = String(wholeSeconds % 60).padStart(2, '0');
+        return `${minutes}:${remainingSeconds}`;
+      }
+
+      const audioPlayers = Array.from(document.querySelectorAll('[data-audio-player]'));
+
+      audioPlayers.forEach((player) => {
+        const audioElement = player.querySelector('audio');
+        const playButton = player.querySelector('[data-audio-play]');
+        const muteButton = player.querySelector('[data-audio-mute]');
+        const seekInput = player.querySelector('[data-audio-seek]');
+        const currentTimeLabel = player.querySelector('[data-audio-current]');
+        const durationLabel = player.querySelector('[data-audio-duration]');
+        const errorLabel = player.querySelector('[data-audio-error]');
+        let errorTimer;
+
+        function hasDuration() {
+          return Number.isFinite(audioElement.duration) && audioElement.duration > 0;
+        }
+
+        function updatePlayButton() {
+          const isPlaying = !audioElement.paused && !audioElement.ended;
+          playButton.innerHTML = isPlaying ? audioIcons.pause : audioIcons.play;
+          playButton.setAttribute('aria-label', isPlaying ? 'Pause audio' : 'Play audio');
+        }
+
+        function updateMuteButton() {
+          muteButton.innerHTML = audioElement.muted ? audioIcons.muted : audioIcons.volume;
+          muteButton.setAttribute('aria-label', audioElement.muted ? 'Unmute audio' : 'Mute audio');
+        }
+
+        function updateTimeline() {
+          const duration = hasDuration() ? audioElement.duration : 0;
+          const progress = duration ? (audioElement.currentTime / duration) * 100 : 0;
+          seekInput.value = String(progress);
+          player.style.setProperty('--seek-progress', `${progress}%`);
+          currentTimeLabel.textContent = formatAudioTime(audioElement.currentTime || 0);
+          durationLabel.textContent = duration ? formatAudioTime(duration) : '--:--';
+        }
+
+        function setLoading(isLoading) {
+          player.classList.toggle('is-loading', isLoading);
+          playButton.disabled = isLoading;
+          seekInput.disabled = isLoading || !hasDuration();
+          if (isLoading) {
+            playButton.innerHTML = audioIcons.loading;
+            playButton.setAttribute('aria-label', 'Loading audio');
+          } else {
+            updatePlayButton();
+          }
+        }
+
+        function showAudioError() {
+          window.clearTimeout(errorTimer);
+          audioElement.pause();
+          setLoading(false);
+          errorLabel.textContent = 'Audio unavailable';
+          errorTimer = window.setTimeout(() => {
+            errorLabel.textContent = '';
+          }, 5000);
+        }
+
+        function pauseOtherPlayers() {
+          audioPlayers.forEach((otherPlayer) => {
+            if (otherPlayer === player) {
+              return;
+            }
+            const otherAudio = otherPlayer.querySelector('audio');
+            const otherPlayButton = otherPlayer.querySelector('[data-audio-play]');
+            const otherSeek = otherPlayer.querySelector('[data-audio-seek]');
+            otherAudio.pause();
+            otherPlayer.classList.remove('is-loading');
+            otherPlayButton.disabled = false;
+            otherPlayButton.innerHTML = audioIcons.play;
+            otherPlayButton.setAttribute('aria-label', 'Play audio');
+            otherSeek.disabled = !(Number.isFinite(otherAudio.duration) && otherAudio.duration > 0);
+          });
+        }
+
+        playButton.addEventListener('click', async () => {
+          errorLabel.textContent = '';
+          if (!audioElement.paused && !audioElement.ended) {
+            audioElement.pause();
+            return;
+          }
+
+          pauseOtherPlayers();
+          setLoading(true);
+          try {
+            await audioElement.play();
+          } catch (error) {
+            if (error.name === 'AbortError') {
+              setLoading(false);
+            } else {
+              showAudioError();
+            }
+          }
+        });
+
+        muteButton.addEventListener('click', () => {
+          audioElement.muted = !audioElement.muted;
+        });
+
+        seekInput.addEventListener('input', () => {
+          if (!hasDuration()) {
+            return;
+          }
+          audioElement.currentTime = (Number(seekInput.value) / 100) * audioElement.duration;
+          updateTimeline();
+        });
+
+        audioElement.addEventListener('loadedmetadata', () => {
+          seekInput.disabled = player.classList.contains('is-loading') || !hasDuration();
+          updateTimeline();
+        });
+        audioElement.addEventListener('durationchange', updateTimeline);
+        audioElement.addEventListener('timeupdate', updateTimeline);
+        audioElement.addEventListener('volumechange', updateMuteButton);
+        audioElement.addEventListener('playing', () => {
+          setLoading(false);
+          updatePlayButton();
+        });
+        audioElement.addEventListener('waiting', () => {
+          if (!audioElement.paused) {
+            setLoading(true);
+          }
+        });
+        audioElement.addEventListener('pause', () => {
+          if (!player.classList.contains('is-loading')) {
+            updatePlayButton();
+          }
+        });
+        audioElement.addEventListener('ended', () => {
+          setLoading(false);
+          updateTimeline();
+        });
+        audioElement.addEventListener('error', showAudioError);
+
+        updatePlayButton();
+        updateMuteButton();
+        updateTimeline();
+      });
 
       const dropzone = document.getElementById('dropzone');
       const fileInput = document.getElementById('pdf_file');
